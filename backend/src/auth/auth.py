@@ -1,12 +1,13 @@
 import json
-from flask import request, _request_ctx_stack
+from flask import request, abort
 from functools import wraps
+
 from jose import jwt
 from urllib.request import urlopen
 
-AUTH0_DOMAIN = 'udacity-fsnd.auth0.com'
+AUTH0_DOMAIN = 'ry-fsnd.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'dev'
+API_AUDIENCE = 'coffee'
 
 
 # AuthError Exception
@@ -57,7 +58,7 @@ def check_permissions(permission, payload):
         raise AuthError({
             'code': 'unauthorized',
             'description': 'Requested Permission not found.'
-        }, 403)
+        }, 401)
 
     return True
 
@@ -125,13 +126,13 @@ def requires_auth(permission=''):
     def requires_auth_decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            token = get_token_auth_header()
             try:
+                token = get_token_auth_header()
                 payload = verify_decode_jwt(token)
+                check_permissions(permission, payload)
             except AuthError as authError:
-                raise AuthError(authError.error, authError.status_code)
+                raise abort(authError.status_code, authError.error["description"])
 
-            check_permissions(permission, payload)
             return f(payload, *args, **kwargs)
 
         return wrapper
