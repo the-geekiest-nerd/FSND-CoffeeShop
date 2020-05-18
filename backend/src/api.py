@@ -41,9 +41,9 @@ def get_all_drinks():
         abort(500)
 
 
-# @TODO: GET /drinks-detail should require the 'get:drinks-detail' permission
 @app.route("/drinks-detail")
-def get_all_drinks_detail():
+@requires_auth("get:drink-details")
+def get_all_drinks_detail(payload):
     try:
         drinks_query = Drink.query.order_by(Drink.id).all()
         drinks = []
@@ -59,9 +59,9 @@ def get_all_drinks_detail():
         abort(500)
 
 
-# @TODO: POST /drinks should require the 'post:drinks' permission
 @app.route("/drinks", methods=["POST"])
-def add_drink():
+@requires_auth("post:drinks")
+def add_drink(payload):
     try:
         request_body = request.get_json()
         if "title" not in request_body or "recipe" not in request_body:
@@ -85,7 +85,7 @@ def add_drink():
         return jsonify({
             "success": True,
             "drinks": [new_drink.long()]
-        }), 201
+        }), 200
 
     except (TypeError, KeyError, ValueError):
         abort(422)
@@ -94,9 +94,9 @@ def add_drink():
         abort(500)
 
 
-# @TODO: PATCH /drinks/<id> should require the 'patch:drinks' permission
 @app.route("/drinks/<int:drink_id>", methods=["PATCH"])
-def update_drink_details(drink_id):
+@requires_auth("patch:drinks")
+def update_drink_details(payload, drink_id):
     drink = Drink.query.get_or_404(drink_id)
 
     try:
@@ -137,9 +137,9 @@ def update_drink_details(drink_id):
         abort(500)
 
 
-# @TODO: DELETE /drinks/<id> should require the 'delete:drinks' permission
 @app.route("/drinks/<int:drink_id>", methods=["DELETE"])
-def delete_drink(drink_id):
+@requires_auth("delete:drinks")
+def delete_drink(payload, drink_id):
     drink = Drink.query.get_or_404(drink_id)
 
     try:
@@ -154,6 +154,9 @@ def delete_drink(drink_id):
         abort(500)
 
 
+@app.errorhandler(400)
+@app.errorhandler(401)
+@app.errorhandler(403)
 @app.errorhandler(404)
 @app.errorhandler(422)
 @app.errorhandler(500)
@@ -163,9 +166,3 @@ def error_handler(error):
         'error': error.code,
         'message': error.description
     }), error.code
-
-
-'''
-@TODO implement error handler for AuthError
-    error handler should conform to general task above 
-'''
